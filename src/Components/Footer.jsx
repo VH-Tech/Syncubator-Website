@@ -35,7 +35,7 @@ const Footer = () => {
             <img
               loading="lazy"
               className="w-28"
-              src="/src/assets/img_syncubator_logo.png"
+              src="/assets/img_syncubator_logo.png"
               alt="Syncubator Logo"
             />
             <Typography

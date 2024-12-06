@@ -18,19 +18,19 @@ const Page5 = () => {
         <Card2
           title={"Wireless Baby Montoring"}
           description={"No hassle of multiple probes and wires"}
-          image_path={"/src/assets/img_syncubator_img_2.png"}
+          image_path={"/assets/img_syncubator_img_2.png"}
           class_style={`sm:w-full   lg:w-4/5 h-[22rem] mt-10 overflow-hidden flex md:flex-row-reverse text-center`}
         />
         <Card2
           title={"Smart Sync"}
           description={"Always stay connected via App based monitoring"}
-          image_path={"/src/assets/img_syncubator_img_2_692x648.png"}
+          image_path={"/assets/img_syncubator_img_2_692x648.png"}
           class_style={` sm:w-full w-2/3 sm:w-full  lg:w-4/5 h-[22rem]  mt-10 text-center overflow-hidden flex md:flex-row `}
         />
         <Card2
           title={"Lightweight and Compact"}
           description={"Design that makes transportation less cumbersome"}
-          image_path={"/src/assets/img_syncubator_img_2_620x646.png"}
+          image_path={"/assets/img_syncubator_img_2_620x646.png"}
           class_style={` sm:w-full w-2/3 sm:w-full lg:w-4/5 h-[22rem]  mt-10 overflow-hidden flex  items-center  md:flex-row-reverse text-center`}
         />
       </div>

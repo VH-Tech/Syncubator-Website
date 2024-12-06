@@ -14,37 +14,37 @@ const Page7 = () => {
         <div className="flex flex-wrap items-center justify-center w-full sm:flex-col md:flex-row lg:flex-row xl:flex-row gap-7">
           <Card4
             name={"Gajendra Singh"}
-            image={"/src/assets/img_rectangle_76.png"}
+            image={"/assets/img_rectangle_76.png"}
             post={"Mentor"}
           />
           <Card4
             name={"Satvasheel Powar"}
-            image={"/src/assets/img_rectangle_78.png"}
+            image={"/assets/img_rectangle_78.png"}
             post={"Mentor"}
           />
           <Card4
             name={"Keshav verma"}
-            image={"/src/assets/img_rectangle_79.png"}
+            image={"/assets/img_rectangle_79.png"}
             post={"Mechanical lead"}
           />
           <Card4
             name={"Vatsal Hariramani"}
-            image={"/src/assets/img_rectangle_77.png"}
+            image={"/assets/img_rectangle_77.png"}
             post={"Electronics and Software Lead"}
           />
           <Card4
             name={"Aman Sikarwar"}
-            image={"/src/assets/aman_pic.jpg"}
+            image={"/assets/aman_pic.jpg"}
             post={"Software Engineer"}
           />
           <Card4
             name={"Badal Gupta"}
-            image={"/src/assets/badal_gupta.jpg"}
+            image={"/assets/badal_gupta.jpg"}
             post={"Mechanical Engineer"}
           />
           <Card4
             name={"Dheeraj"}
-            image={"/src/assets/dheeraj_pic.jpg"}
+            image={"/assets/dheeraj_pic.jpg"}
             post={"Electronics Engineer"}
           />
         </div>
@@ -59,37 +59,37 @@ const Page7 = () => {
         >
           <img
             loading="lazy"
-            src="/src/assets/img_all_india_insti.png"
+            src="/assets/img_all_india_insti.png"
             className="object-contain w-36 h-36"
             alt="All India Institute"
           />
           <img
             loading="lazy"
-            src="/src/assets/img_custom_logo_img_full_high.png"
+            src="/assets/img_custom_logo_img_full_high.png"
             className="object-contain w-36 h-36"
             alt="Custom Logo"
           />
           <img
             loading="lazy"
-            src="/src/assets/img_ihub_logo_new_2.png"
+            src="/assets/img_ihub_logo_new_2.png"
             className="object-contain w-36 h-36"
             alt="iHub Logo"
           />
           <img
             loading="lazy"
-            src="/src/assets/img_images_1.png"
+            src="/assets/img_images_1.png"
             className="object-contain w-36 h-36"
             alt="Logo 1"
           />
           <img
             loading="lazy"
-            src="/src/assets/img_indian_institut.png"
+            src="/assets/img_indian_institut.png"
             className="object-contain w-36 h-36"
             alt="Indian Institute"
           />
           <img
             loading="lazy"
-            src="/src/assets/img_images_1_118x118.png"
+            src="/assets/img_images_1_118x118.png"
             className="object-contain w-36 h-36"
             alt="Logo 2"
           />

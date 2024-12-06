@@ -3,19 +3,22 @@ import React from "react";
 
 const Page1 = () => {
   return (
-    <div className="w-full h-full">
-      <figure className="relative w-full h-full">
+    <div className="w-full h-screen relative">
+      <figure className="w-full h-full">
         <img
           loading="lazy"
-          src="/assets/img_hero.jpg"
+          src="./assets/img_hero.jpg"
           alt="hero image"
-          className="object-cover object-center w-full h-full"
+          className="w-full h-full object-cover"
         />
-        <figcaption className="uppercase absolute bottom-4 ml-8 flex text-white lg:text-[5rem] md:text-[3rem] sm:text-[1.5rem]">
-          <div>
-            <div className="font-poppins">Precision Care for</div>
-
-            <div className="font-poppins ">Premature Life</div>
+        <figcaption className="absolute bottom-8 left-8 text-white">
+          <div className="uppercase">
+            <div className="font-poppins text-[1.5rem] sm:text-[3rem] lg:text-[5rem]">
+              Precision Care for
+            </div>
+            <div className="font-poppins text-[1.5rem] sm:text-[3rem] lg:text-[5rem]">
+              Premature Life
+            </div>
           </div>
         </figcaption>
       </figure>

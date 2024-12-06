@@ -17,7 +17,7 @@ const Page2 = () => {
         <div className="xl:w-1/2 md:w-3/5 lg:w-1/2">
           <img
             loading="lazy"
-            src="/src/assets/img_rectangle_66_3.png"
+            src="/assets/img_rectangle_66_3.png"
             className="h-auto max-h-[80vh] w-full object-cover"
             // className="sm:h-full md:h-3/5 lg:h-[40rem] xl:w-1/2 "
             alt=""

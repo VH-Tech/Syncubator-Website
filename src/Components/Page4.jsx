@@ -29,7 +29,7 @@ const Page4 = () => {
             <Tab key={"incubator"} value={"incubator"}>
               <img
                 loading="lazy"
-                src="/src/assets/img_thumbs_up.svg"
+                src="/assets/img_thumbs_up.svg"
                 className="h-10"
                 alt=""
               />
@@ -37,7 +37,7 @@ const Page4 = () => {
             <Tab key={"warm"} value={"warm"}>
               <img
                 loading="lazy"
-                src="/src/assets/img_warmer_mode_buttons.svg"
+                src="/assets/img_warmer_mode_buttons.svg"
                 className="h-10 "
               />
             </Tab>
@@ -60,7 +60,7 @@ const Page4 = () => {
                 description={
                   "Precise thermoregulation and vitals control for critical situations"
                 }
-                image_path={"/src/assets/img_syncubator_img_2_620x646.png"}
+                image_path={"/assets/img_syncubator_img_2_620x646.png"}
               />
             </TabPanel>
             <TabPanel
@@ -73,7 +73,7 @@ const Page4 = () => {
                 description={
                   "Natural thermal regulation with gentle warmth, focusing on comfort"
                 }
-                image_path={"/src/assets/img_rectangle_66_3.png"}
+                image_path={"/assets/img_rectangle_66_3.png"}
               />
             </TabPanel>
           </TabsBody>

@@ -24,13 +24,13 @@ const Page3 = () => {
             <img
               className="w-full"
               loading="lazy"
-              src="/src/assets/img_rectangle_83.png"
+              src="/assets/img_rectangle_83.png"
               alt=""
             />
             <img
               className="w-full "
               loading="lazy"
-              src="/src/assets/img_rectangle_83_612x364.png"
+              src="/assets/img_rectangle_83_612x364.png"
               alt=""
             />
           </div>
@@ -38,13 +38,13 @@ const Page3 = () => {
             <img
               className="w-full"
               loading="lazy"
-              src="/src/assets/img_rectangle_82.png"
+              src="/assets/img_rectangle_82.png"
               alt=""
             />
             <img
               className="w-full h-fit"
               loading="lazy"
-              src="/src/assets/img_rectangle_80.png"
+              src="/assets/img_rectangle_80.png"
               alt=""
             />
           </div>
