@@ -60,7 +60,7 @@ const Page4 = () => {
                 description={
                   "Precise thermoregulation and vitals control for critical situations"
                 }
-                image_path={"/assets/img_syncubator_img_2_620x646.png"}
+                image_path={"/assets/img_syncubator_img_2_620x646.webp"}
               />
             </TabPanel>
             <TabPanel
@@ -73,7 +73,7 @@ const Page4 = () => {
                 description={
                   "Natural thermal regulation with gentle warmth, focusing on comfort"
                 }
-                image_path={"/assets/img_rectangle_66_3.png"}
+                image_path={"/assets/img_rectangle_66_3.webp"}
               />
             </TabPanel>
           </TabsBody>

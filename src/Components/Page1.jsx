@@ -7,7 +7,7 @@ const Page1 = () => {
       <figure className="w-full h-full">
         <img
           loading="lazy"
-          src="./assets/img_hero.jpg"
+          src="/assets/img_hero_2.webp"
           alt="hero image"
           className="w-full h-full object-cover"
         />

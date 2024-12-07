@@ -30,7 +30,7 @@ const Page5 = () => {
         <Card2
           title={"Lightweight and Compact"}
           description={"Design that makes transportation less cumbersome"}
-          image_path={"/assets/img_syncubator_img_2_620x646.png"}
+          image_path={"/assets/img_syncubator_img_2_620x646.webp"}
           class_style={` sm:w-full w-2/3 sm:w-full lg:w-4/5 h-[22rem]  mt-10 overflow-hidden flex  items-center  md:flex-row-reverse text-center`}
         />
       </div>
