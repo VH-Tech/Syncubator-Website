@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './Dashboard.css';
-
-const PORT = import.meta.env.VITE_PORT || 3000;
+import API_BASE_URL from '../config';
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -22,7 +21,8 @@ const Dashboard = () => {
     // Add authentication header to axios requests
     const axiosConfig = {
         headers: {
-            Authorization: `Bearer ${localStorage.getItem('adminToken')}`
+            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+            'Content-Type': 'application/json'
         }
     };
 
@@ -34,18 +34,35 @@ const Dashboard = () => {
     // Fetch all items
     const fetchItems = async () => {
         try {
-            const response = await axios.get(`http://localhost:${PORT}/api/getItems`, axiosConfig);
+            console.log('Fetching items from:', `${API_BASE_URL}/api/getItems`);
+            const response = await axios.get(`${API_BASE_URL}/api/getItems`, axiosConfig);
+            console.log('Response:', response.data);
             setItems(response.data);
         } catch (error) {
+            console.error('Error details:', {
+                message: error.message,
+                response: error.response,
+                config: error.config
+            });
             if (error.response?.status === 401) {
                 handleLogout();
             }
-            console.error('Error fetching items:', error);
         }
     };
 
     useEffect(() => {
-        fetchItems();
+        const fetchData = async () => {
+            try {
+                await fetchItems();
+            } catch (error) {
+                if (error.response?.status === 401 || error.response?.status === 403) {
+                    console.error('Authentication error:', error);
+                    handleLogout();
+                }
+            }
+        };
+        
+        fetchData();
     }, []);
 
     // Handle form input changes
@@ -84,7 +101,7 @@ const Dashboard = () => {
 
             if (editingId) {
                 await axios.put(
-                    `http://localhost:${PORT}/api/updateItem/${editingId}`, 
+                    `${API_BASE_URL}/api/updateItem/${editingId}`, 
                     formDataToSend, 
                     {
                         ...axiosConfig,
@@ -96,7 +113,7 @@ const Dashboard = () => {
                 );
             } else {
                 await axios.post(
-                    `http://localhost:${PORT}/api/postItems`, 
+                    `${API_BASE_URL}/api/postItems`, 
                     formDataToSend,
                     {
                         ...axiosConfig,
@@ -122,7 +139,7 @@ const Dashboard = () => {
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this item?')) {
             try {
-                await axios.delete(`http://localhost:${PORT}/api/deleteItem/${id}`, axiosConfig);
+                await axios.delete(`${API_BASE_URL}/api/deleteItem/${id}`, axiosConfig);
                 fetchItems();
             } catch (error) {
                 console.error('Error deleting item:', error);

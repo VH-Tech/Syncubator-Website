@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
-
-// Use the same port configuration as Dashboard
-const PORT = import.meta.env.VITE_PORT || 3306;
+import API_BASE_URL from '../config';
 
 const Login = () => {
     const [credentials, setCredentials] = useState({
@@ -12,7 +10,29 @@ const Login = () => {
         password: ''
     });
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        // Check if already logged in
+        const checkAuth = async () => {
+            const token = localStorage.getItem('adminToken');
+            if (token) {
+                try {
+                    const response = await axios.get(`${API_BASE_URL}/api/verify-token`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    if (response.data.valid) {
+                        navigate('/admin');
+                    }
+                } catch (error) {
+                    localStorage.removeItem('adminToken');
+                }
+            }
+        };
+        
+        checkAuth();
+    }, [navigate]);
 
     const handleChange = (e) => {
         setCredentials({
@@ -23,27 +43,31 @@ const Login = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
+        setError('');
+        
         try {
-            console.log('Attempting login...'); // Debug log
             const response = await axios.post(
-                `http://localhost:${PORT}/api/login`,
+                `${API_BASE_URL}/api/login`,
                 credentials
             );
             
-            console.log('Login response:', response.data); // Debug log
-            
             if (response.data.token) {
-                console.log('Token received, storing...'); // Debug log
                 localStorage.setItem('adminToken', response.data.token);
-                console.log('Token stored, navigating...'); // Debug log
-                navigate('/admin');
+                // Clear form
+                setCredentials({ username: '', password: '' });
+                // Redirect to admin page
+                navigate('/admin', { replace: true });
             } else {
-                console.log('No token in response'); // Debug log
                 setError('Login failed - no token received');
             }
         } catch (error) {
             console.error('Login error:', error.response || error);
             setError(error.response?.data?.message || 'Invalid credentials');
+            // Clear password field on error
+            setCredentials(prev => ({ ...prev, password: '' }));
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -59,6 +83,7 @@ const Login = () => {
                         placeholder="Username"
                         value={credentials.username}
                         onChange={handleChange}
+                        disabled={loading}
                         required
                     />
                     <input
@@ -67,9 +92,12 @@ const Login = () => {
                         placeholder="Password"
                         value={credentials.password}
                         onChange={handleChange}
+                        disabled={loading}
                         required
                     />
-                    <button type="submit">Login</button>
+                    <button type="submit" disabled={loading}>
+                        {loading ? 'Logging in...' : 'Login'}
+                    </button>
                 </form>
             </div>
         </div>

@@ -12,15 +12,24 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import https from 'https';
 dotenv.config();
 
 // Initialize app
 const app = express();
-const PORT = process.env.PORT || 3306;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(bodyParser.json());
-app.use(cors());
+app.use(cors({
+    origin: ['https://syncubator.in', 'http://localhost:5173'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Add error handling for CORS preflight
+app.options('*', cors());
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -28,10 +37,14 @@ const __dirname = dirname(__filename);
 // Connect to MongoDB
 connectDB();
 
-// Configure multer for file uploads
+// Serve static files - add this before your routes
+app.use(express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// File upload configuration
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const uploadDir = path.join(__dirname, 'public/uploads');
+        const uploadDir = path.join(__dirname, 'uploads');
         console.log('Upload directory:', uploadDir);
         
         // Create directory if it doesn't exist
@@ -66,29 +79,16 @@ const upload = multer({
     }
 }).single('image');
 
-// Add custom error handling middleware for file uploads
-const handleUpload = (req, res, next) => {
-    upload(req, res, function(err) {
-        if (err instanceof multer.MulterError) {
-            // Multer error (e.g., file too large)
-            return res.status(400).json({ 
-                status: 'error',
-                message: `Upload error: ${err.message}`
-            });
-        } else if (err) {
-            // Other errors (e.g., file type)
-            return res.status(400).json({ 
-                status: 'error',
-                message: err.message
-            });
-        }
-        next();
-    });
-};
-
-// Serve static files
-app.use(express.static('public'));
-app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+// Add a route to check if files exist
+app.get('/check-file/:filename', (req, res) => {
+    const filePath = path.join(__dirname, 'uploads', req.params.filename);
+    console.log('Checking file:', filePath);
+    if (fs.existsSync(filePath)) {
+        res.json({ exists: true, path: filePath });
+    } else {
+        res.json({ exists: false, path: filePath });
+    }
+});
 
 // Add middleware to verify token
 const authenticateToken = (req, res, next) => {
@@ -96,59 +96,92 @@ const authenticateToken = (req, res, next) => {
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
-        return res.status(401).json({ message: 'Access denied' });
+        return res.status(401).json({ 
+            message: 'Access denied',
+            error: 'No token provided'
+        });
     }
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-        if (err) return res.status(403).json({ message: 'Invalid token' });
-        req.user = user;
+    try {
+        const verified = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = verified;
         next();
-    });
+    } catch (err) {
+        console.error('Token verification error:', err);
+        return res.status(403).json({ 
+            message: 'Invalid token',
+            error: err.message
+        });
+    }
 };
 
 // Routes
 
-// GET all posts
+// Public routes (no authentication needed)
 app.get('/api/getItems', async (req, res) => {
     try {
         const posts = await PostItem.findAll();
         res.status(200).json(posts);
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        console.error('Error fetching items:', error);
+        res.status(500).json({ 
+            message: 'Server Error',
+            error: error.message 
+        });
     }
 });
 
-// POST a new post
-app.post('/api/postItems', authenticateToken, handleUpload, async (req, res) => {
-    try {
-        const { title, description, link, imageType } = req.body;
-        
-        if (!req.file) {
-            return res.status(400).json({ message: 'Image is required' });
+// Protected routes (need authentication)
+app.post('/api/postItems', authenticateToken, (req, res) => {
+    upload(req, res, async function(err) {
+        if (err instanceof multer.MulterError) {
+            console.error('Multer error:', err);
+            return res.status(400).json({ message: `Upload error: ${err.message}` });
+        } else if (err) {
+            console.error('Other upload error:', err);
+            return res.status(400).json({ message: err.message });
         }
 
-        // Log the full file path and URL
-        const fullFilePath = path.join(__dirname, 'public/uploads', req.file.filename);
-        const imageUrl = `/uploads/${req.file.filename}`;
-        
-        console.log('Full file path:', fullFilePath);
-        console.log('File exists:', fs.existsSync(fullFilePath));
-        console.log('Image URL:', imageUrl);
-        console.log('File details:', req.file);
+        try {
+            const { title, description, link, imageType } = req.body;
+            
+            if (!req.file) {
+                return res.status(400).json({ message: 'Image is required' });
+            }
 
-        const newPost = await PostItem.create({ 
-            img: imageUrl,
-            title, 
-            description, 
-            link, 
-            imageType: imageType || 'cover' 
-        });
+            // Get the Replit URL from environment variables
+            const baseUrl = `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
+            const imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
+            
+            // Verify file exists
+            const filePath = path.join(__dirname, 'uploads', req.file.filename);
+            const fileExists = fs.existsSync(filePath);
+            
+            console.log('File uploaded successfully');
+            console.log('Base URL:', baseUrl);
+            console.log('Image URL:', imageUrl);
+            console.log('File path:', filePath);
+            console.log('File exists:', fileExists);
+            console.log('File details:', req.file);
 
-        res.status(201).json(newPost);
-    } catch (error) {
-        console.error('Error in POST /api/postItems:', error);
-        res.status(500).json({ message: 'Server Error', error: error.message });
-    }
+            const newPost = await PostItem.create({
+                img: imageUrl,
+                title,
+                description,
+                link,
+                imageType: imageType || 'cover'
+            });
+
+            res.status(201).json({
+                ...newPost.toJSON(),
+                fileExists,
+                filePath
+            });
+        } catch (error) {
+            console.error('Database error:', error);
+            res.status(500).json({ message: 'Server Error', error: error.message });
+        }
+    });
 });
 
 // DELETE a post by ID
@@ -168,60 +201,102 @@ app.delete('/api/deleteItem/:id', authenticateToken, async (req, res) => {
 });
 
 // UPDATE a post by ID
-app.put('/api/updateItem/:id', authenticateToken, handleUpload, async (req, res) => {
-    try {
-        const { title, description, link, imageType } = req.body;
-        
-        // Prepare update data
-        const updateData = {
-            title,
-            description,
-            link,
-            imageType
-        };
-
-        // If a new image was uploaded, update the image path
-        if (req.file) {
-            const imageUrl = `/uploads/${req.file.filename}`;
-            updateData.img = imageUrl;
+app.put('/api/updateItem/:id', authenticateToken, (req, res) => {
+    upload(req, res, async function(err) {
+        if (err) {
+            console.error('Upload error:', err);
+            return res.status(400).json({ message: err.message });
         }
 
-        const [updated] = await PostItem.update(
-            updateData,
-            { where: { id: req.params.id } }
-        );
-        
-        if (!updated) {
-            return res.status(404).json({ message: 'Post not found' });
+        try {
+            const updateData = {
+                title: req.body.title,
+                description: req.body.description,
+                link: req.body.link,
+                imageType: req.body.imageType
+            };
+
+            if (req.file) {
+                const baseUrl = `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
+                updateData.img = `${baseUrl}/uploads/${req.file.filename}`;
+            }
+
+            const [updated] = await PostItem.update(
+                updateData,
+                { where: { id: req.params.id } }
+            );
+
+            if (!updated) {
+                return res.status(404).json({ message: 'Post not found' });
+            }
+
+            const updatedPost = await PostItem.findByPk(req.params.id);
+            res.status(200).json(updatedPost);
+        } catch (error) {
+            console.error('Update error:', error);
+            res.status(500).json({ message: 'Server Error', error: error.message });
         }
-        
-        const updatedPost = await PostItem.findByPk(req.params.id);
-        res.status(200).json(updatedPost);
-    } catch (error) {
-        console.error('Error in PUT /api/updateItem:', error.message);
-        res.status(500).json({ message: 'Server Error', error: error.message });
-    }
+    });
 });
 
 // Login route
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     
-    // Replace with your admin credentials verification
-    if (username === process.env.ADMIN_USERNAME && 
-        password === process.env.ADMIN_PASSWORD) {
-        const token = jwt.sign(
-            { username: username },
-            process.env.JWT_SECRET,
-            { expiresIn: '24h' }
-        );
-        res.json({ token });
-    } else {
-        res.status(401).json({ message: 'Invalid credentials' });
+    try {
+        if (username === process.env.ADMIN_USERNAME && 
+            password === process.env.ADMIN_PASSWORD) {
+            const token = jwt.sign(
+                { username: username },
+                process.env.JWT_SECRET,
+                { expiresIn: '24h' }
+            );
+            console.log('Login successful, token generated');
+            res.json({ 
+                token,
+                message: 'Login successful'
+            });
+        } else {
+            console.log('Invalid credentials attempt');
+            res.status(401).json({ message: 'Invalid credentials' });
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ message: 'Server error during login' });
     }
 });
 
+// Add this route to verify tokens
+app.get('/api/verify-token', authenticateToken, (req, res) => {
+    try {
+        res.status(200).json({ 
+            valid: true,
+            user: req.user
+        });
+    } catch (error) {
+        console.error('Token verification error:', error);
+        res.status(403).json({ 
+            valid: false,
+            message: 'Token verification failed',
+            error: error.message
+        });
+    }
+});
+
+// Keep Replit alive
+setInterval(() => {
+    https.get('https://your-repl-name.your-username.repl.co', (resp) => {
+        if (resp.statusCode === 200) {
+            console.log('Server kept alive');
+        }
+    }).on('error', (err) => {
+        console.log('Error: ' + err.message);
+    });
+}, 280000); // Every 4.6 minutes
+
 // Start the server
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log('Server is running on:');
+    console.log(`1. Development URL: ${process.env.REPL_SLUG}`);
+    console.log(`2. Production URL: https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`);
 });
