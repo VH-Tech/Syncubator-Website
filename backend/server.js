@@ -163,7 +163,12 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// Start the server
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+// Then use PORT from environment variables with a fallback
+const PORT = process.env.PORT || 10000;
+
+// Update the listen call to log the actual port being used
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log('Environment:', process.env.NODE_ENV);
+    console.log('Database Host:', process.env.DB_HOST);
 });
