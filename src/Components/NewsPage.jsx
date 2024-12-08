@@ -27,6 +27,7 @@ const NewsPage = () => {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
+                console.log('Fetched news items:', data);
                 setNewsItems(data);
             } catch (error) {
                 console.error('Error fetching news:', error);

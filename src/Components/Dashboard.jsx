@@ -16,6 +16,8 @@ const Dashboard = () => {
         imageType: 'cover'
     });
     const [editingId, setEditingId] = useState(null);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState(null);
 
     // Add authentication header to axios requests
     const axiosConfig = {
@@ -54,19 +56,61 @@ const Dashboard = () => {
         });
     };
 
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setSelectedFile(file);
+            // Create preview URL
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreviewUrl(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     // Handle form submission (Create/Update)
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            if (editingId) {
-                // Update existing item
-                await axios.put(`http://localhost:${PORT}/api/updateItem/${editingId}`, formData, axiosConfig);
-            } else {
-                // Create new item
-                await axios.post(`http://localhost:${PORT}/api/postItems`, formData, axiosConfig);
+            const formDataToSend = new FormData();
+            if (selectedFile) {
+                formDataToSend.append('image', selectedFile);
             }
-            // Reset form and refresh items
+            formDataToSend.append('title', formData.title);
+            formDataToSend.append('description', formData.description);
+            formDataToSend.append('link', formData.link);
+            formDataToSend.append('imageType', formData.imageType);
+
+            if (editingId) {
+                await axios.put(
+                    `http://localhost:${PORT}/api/updateItem/${editingId}`, 
+                    formDataToSend, 
+                    {
+                        ...axiosConfig,
+                        headers: {
+                            ...axiosConfig.headers,
+                            'Content-Type': 'multipart/form-data'
+                        }
+                    }
+                );
+            } else {
+                await axios.post(
+                    `http://localhost:${PORT}/api/postItems`, 
+                    formDataToSend,
+                    {
+                        ...axiosConfig,
+                        headers: {
+                            ...axiosConfig.headers,
+                            'Content-Type': 'multipart/form-data'
+                        }
+                    }
+                );
+            }
+
             setFormData({ img: '', title: '', description: '', link: '', imageType: 'cover' });
+            setSelectedFile(null);
+            setPreviewUrl(null);
             setEditingId(null);
             fetchItems();
         } catch (error) {
@@ -113,12 +157,20 @@ const Dashboard = () => {
                     <div className="items-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 h-[calc(100vh-250px)] overflow-y-auto">
                         {items.map((item) => (
                             <div key={item.id} className="item-card">
-                                <img 
-                                    src={item.img} 
-                                    alt={item.title} 
-                                    className={`w-full h-48 md:h-[26rem] rounded-xl object-${item.imageType}`}
-                                />
-                                <p className="text-sm text-gray-500">Image Type: {item.imageType}</p>
+                                {item.img && (
+                                    <div className="relative">
+                                        <img 
+                                            src={item.img} 
+                                            alt={item.title} 
+                                            className={`w-full h-48 md:h-[26rem] rounded-xl object-${item.imageType}`}
+                                            onError={(e) => {
+                                                console.error('Failed to load image:', item.img);
+                                                e.target.src = 'placeholder.jpg'; // Add a placeholder image
+                                            }}
+                                        />
+                                        <p className="text-sm text-gray-500 mt-2">Image URL: {item.img}</p>
+                                    </div>
+                                )}
                                 <h3 className='text-xl md:text-2xl font-bold mb-2'> Title: </h3>
                                  <p className='text-xl md:text-2xl font-bold mb-2'> {item.title}</p>
                                 <h4 className='text-sm md:text-base mb-2'> Description: </h4>
@@ -142,14 +194,24 @@ const Dashboard = () => {
                         </button>   
                     </div>
                     <form onSubmit={handleSubmit} className='p-4'>
-                        <input
-                            className='border rounded-md p-2 mb-4'
-                            type="text"
-                            name="img"
-                            placeholder="Image URL"
-                            value={formData.img}
-                            onChange={handleInputChange}
-                        />  
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Upload Image
+                            </label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileChange}
+                                className="mt-1 block w-full"
+                            />
+                            {previewUrl && (
+                                <img 
+                                    src={previewUrl} 
+                                    alt="Preview" 
+                                    className="mt-2 h-32 object-contain"
+                                />
+                            )}
+                        </div>
                         <input
                             className='border rounded-md p-2 mb-4'
                             type="text"
