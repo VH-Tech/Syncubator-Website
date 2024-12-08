@@ -12,6 +12,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import AWS from 'aws-sdk';
 dotenv.config();
 
 // Initialize app
@@ -20,7 +21,11 @@ const PORT = process.env.PORT || 3306;
 
 // Middleware
 app.use(bodyParser.json());
-app.use(cors());
+app.use(cors({
+    origin: ['https://syncubator.in', 'http://localhost:5173'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -28,43 +33,12 @@ const __dirname = dirname(__filename);
 // Connect to MongoDB
 connectDB();
 
+// Configure S3 for file uploads
+const s3 = new AWS.S3();
+
 // Configure multer for file uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadDir = path.join(__dirname, 'public/uploads');
-        console.log('Upload directory:', uploadDir);
-        
-        // Create directory if it doesn't exist
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-        cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const filename = file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname);
-        console.log('Generated filename:', filename);
-        cb(null, filename);
-    }
-});
-
-const upload = multer({ 
-    storage: storage,
-    limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB limit
-    },
-    fileFilter: (req, file, cb) => {
-        const filetypes = /jpeg|jpg|png|gif/;
-        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = filetypes.test(file.mimetype);
-
-        if (extname && mimetype) {
-            return cb(null, true);
-        } else {
-            return cb(new Error('Only image files (jpeg, jpg, png, gif) are allowed!'), false);
-        }
-    }
-}).single('image');
+const storage = multer.memoryStorage(); // Temporarily store in memory
+const upload = multer({ storage: storage });
 
 // Add custom error handling middleware for file uploads
 const handleUpload = (req, res, next) => {
@@ -119,34 +93,32 @@ app.get('/api/getItems', async (req, res) => {
 });
 
 // POST a new post
-app.post('/api/postItems', authenticateToken, handleUpload, async (req, res) => {
+app.post('/api/postItems', authenticateToken, upload.single('image'), async (req, res) => {
     try {
-        const { title, description, link, imageType } = req.body;
-        
-        if (!req.file) {
-            return res.status(400).json({ message: 'Image is required' });
-        }
+        const file = req.file;
+        const s3Params = {
+            Bucket: process.env.AWS_S3_BUCKET,
+            Key: `uploads/${Date.now()}-${file.originalname}`,
+            Body: file.buffer,
+            ContentType: file.mimetype,
+            ACL: 'public-read'
+        };
 
-        // Log the full file path and URL
-        const fullFilePath = path.join(__dirname, 'public/uploads', req.file.filename);
-        const imageUrl = `/uploads/${req.file.filename}`;
-        
-        console.log('Full file path:', fullFilePath);
-        console.log('File exists:', fs.existsSync(fullFilePath));
-        console.log('Image URL:', imageUrl);
-        console.log('File details:', req.file);
+        const s3Upload = await s3.upload(s3Params).promise();
+        const imageUrl = s3Upload.Location;
 
-        const newPost = await PostItem.create({ 
+        // Create database entry with S3 URL
+        const newPost = await PostItem.create({
             img: imageUrl,
-            title, 
-            description, 
-            link, 
-            imageType: imageType || 'cover' 
+            title: req.body.title,
+            description: req.body.description,
+            link: req.body.link,
+            imageType: req.body.imageType || 'cover'
         });
 
         res.status(201).json(newPost);
     } catch (error) {
-        console.error('Error in POST /api/postItems:', error);
+        console.error('Error:', error);
         res.status(500).json({ message: 'Server Error', error: error.message });
     }
 });

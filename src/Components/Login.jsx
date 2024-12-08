@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import './Login.css';
 
 // Use the same port configuration as Dashboard
-const PORT = import.meta.env.VITE_PORT || 3306;
+const PORT = process.env.PORT || 8080;
 
 const Login = () => {
     const [credentials, setCredentials] = useState({

@@ -22,7 +22,7 @@ const NewsPage = () => {
         const fetchNews = async () => {
             try {
                 setLoading(true);
-                const response = await fetch(`http://localhost:${SQL}/api/getItems`);
+                const response = await fetch(`${process.env.SERVER_URL}/api/getItems`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -36,7 +36,7 @@ const NewsPage = () => {
                 setLoading(false);
             }
         };
-
+        
         fetchNews();
     }, []);
 

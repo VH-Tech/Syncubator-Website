@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './Dashboard.css';
 
-const PORT = import.meta.env.VITE_PORT || 3000;
+const PORT = process.env.PORT || 8080;
 
 const Dashboard = () => {
     const navigate = useNavigate();
