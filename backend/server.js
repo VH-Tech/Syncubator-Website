@@ -6,91 +6,35 @@ import PostItem from './models/postItem.js';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
 import multer from 'multer';
 import path from 'path';
-import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import AWS from 'aws-sdk';
 dotenv.config();
 
 // Initialize app
 const app = express();
-const PORT = process.env.PORT || 3306;
 
 // Middleware
 app.use(bodyParser.json());
-app.use(cors());
+app.use(cors({
+    origin: ['https://syncubator.in', 'http://localhost:5173'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Connect to MongoDB
+// Connect to MySQL
 connectDB();
 
 // Configure multer for file uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadDir = path.join(__dirname, 'public/uploads');
-        console.log('Upload directory:', uploadDir);
-        
-        // Create directory if it doesn't exist
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-        cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const filename = file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname);
-        console.log('Generated filename:', filename);
-        cb(null, filename);
-    }
-});
+const storage = multer.memoryStorage(); // Store in memory temporarily
+const upload = multer({ storage: storage });
 
-const upload = multer({ 
-    storage: storage,
-    limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB limit
-    },
-    fileFilter: (req, file, cb) => {
-        const filetypes = /jpeg|jpg|png|gif/;
-        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = filetypes.test(file.mimetype);
-
-        if (extname && mimetype) {
-            return cb(null, true);
-        } else {
-            return cb(new Error('Only image files (jpeg, jpg, png, gif) are allowed!'), false);
-        }
-    }
-}).single('image');
-
-// Add custom error handling middleware for file uploads
-const handleUpload = (req, res, next) => {
-    upload(req, res, function(err) {
-        if (err instanceof multer.MulterError) {
-            // Multer error (e.g., file too large)
-            return res.status(400).json({ 
-                status: 'error',
-                message: `Upload error: ${err.message}`
-            });
-        } else if (err) {
-            // Other errors (e.g., file type)
-            return res.status(400).json({ 
-                status: 'error',
-                message: err.message
-            });
-        }
-        next();
-    });
-};
-
-// Serve static files
-app.use(express.static('public'));
-app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
-
-// Add middleware to verify token
+// Authentication middleware
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
@@ -107,8 +51,6 @@ const authenticateToken = (req, res, next) => {
 };
 
 // Routes
-
-// GET all posts
 app.get('/api/getItems', async (req, res) => {
     try {
         const posts = await PostItem.findAll();
@@ -119,7 +61,7 @@ app.get('/api/getItems', async (req, res) => {
 });
 
 // POST a new post
-app.post('/api/postItems', authenticateToken, handleUpload, async (req, res) => {
+app.post('/api/postItems', authenticateToken, upload.single('image'), async (req, res) => {
     try {
         const { title, description, link, imageType } = req.body;
         
@@ -168,7 +110,7 @@ app.delete('/api/deleteItem/:id', authenticateToken, async (req, res) => {
 });
 
 // UPDATE a post by ID
-app.put('/api/updateItem/:id', authenticateToken, handleUpload, async (req, res) => {
+app.put('/api/updateItem/:id', authenticateToken, upload.single('image'), async (req, res) => {
     try {
         const { title, description, link, imageType } = req.body;
         

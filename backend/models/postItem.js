@@ -4,7 +4,7 @@ import { sequelize } from '../db.js';
 
 const PostItem = sequelize.define('PostItem', {
     img: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT('long'),
         allowNull: false
     },
     title: {
@@ -19,15 +19,13 @@ const PostItem = sequelize.define('PostItem', {
         type: DataTypes.STRING,
         allowNull: false
     },
-    createdAt: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
-    },
     imageType: {
         type: DataTypes.STRING,
         allowNull: false,
         defaultValue: 'cover'
     }
+}, {
+    timestamps: true
 });
 
 export default PostItem;
