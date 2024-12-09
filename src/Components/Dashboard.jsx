@@ -139,10 +139,11 @@ const Dashboard = () => {
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this item?')) {
             try {
+                console.log('Deleting item with ID:', id);
                 await axios.delete(`${API_BASE_URL}/api/deleteItem/${id}`, axiosConfig);
                 fetchItems();
             } catch (error) {
-                console.error('Error deleting item:', error);
+                console.error('Error deleting item:', error.response?.data || error);
             }
         }
     };
@@ -156,7 +157,7 @@ const Dashboard = () => {
             link: item.link,
             imageType: item.imageType
         });
-        setEditingId(item.id);
+        setEditingId(item._id);
     };
 
     return (
@@ -173,7 +174,7 @@ const Dashboard = () => {
                     <h2 className='text-xl md:text-2xl font-bold mb-4'>Current Items</h2>
                     <div className="items-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 h-[calc(100vh-250px)] overflow-y-auto">
                         {items.map((item) => (
-                            <div key={item.id} className="item-card">
+                            <div key={item._id} className="item-card">
                                 {item.img && (
                                     <div className="relative">
                                         <img 
@@ -195,7 +196,7 @@ const Dashboard = () => {
                                 <a href={item.link} target="_blank" rel="noopener noreferrer" className='text-sm md:text-base mb-2 text-blue-500'>View Link</a>
                                 <div className="item-actions">
                                     <button onClick={() => handleEdit(item)} className='bg-black text-white px-4 py-2 rounded-md'>Edit</button>
-                                    <button onClick={() => handleDelete(item.id)} className='bg-black text-white px-4 py-2 rounded-md'>Delete</button>
+                                    <button onClick={() => handleDelete(item._id)} className='bg-black text-white px-4 py-2 rounded-md'>Delete</button>
                                 </div>
                             </div>
                         ))}

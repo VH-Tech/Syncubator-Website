@@ -17,12 +17,12 @@ dotenv.config();
 
 // Initialize app
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3001;
 
 // Middleware
 app.use(bodyParser.json());
 app.use(cors({
-    origin: ['https://syncubator.in', 'http://localhost:5173'],
+    origin: ['http://localhost:5173', 'http://localhost:3000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -120,7 +120,7 @@ const authenticateToken = (req, res, next) => {
 // Public routes (no authentication needed)
 app.get('/api/getItems', async (req, res) => {
     try {
-        const posts = await PostItem.findAll();
+        const posts = await PostItem.find().sort({ createdAt: -1 });
         res.status(200).json(posts);
     } catch (error) {
         console.error('Error fetching items:', error);
@@ -134,11 +134,7 @@ app.get('/api/getItems', async (req, res) => {
 // Protected routes (need authentication)
 app.post('/api/postItems', authenticateToken, (req, res) => {
     upload(req, res, async function(err) {
-        if (err instanceof multer.MulterError) {
-            console.error('Multer error:', err);
-            return res.status(400).json({ message: `Upload error: ${err.message}` });
-        } else if (err) {
-            console.error('Other upload error:', err);
+        if (err) {
             return res.status(400).json({ message: err.message });
         }
 
@@ -149,22 +145,10 @@ app.post('/api/postItems', authenticateToken, (req, res) => {
                 return res.status(400).json({ message: 'Image is required' });
             }
 
-            // Get the Replit URL from environment variables
             const baseUrl = `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
-            const imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
-            
-            // Verify file exists
-            const filePath = path.join(__dirname, 'uploads', req.file.filename);
-            const fileExists = fs.existsSync(filePath);
-            
-            console.log('File uploaded successfully');
-            console.log('Base URL:', baseUrl);
-            console.log('Image URL:', imageUrl);
-            console.log('File path:', filePath);
-            console.log('File exists:', fileExists);
-            console.log('File details:', req.file);
+            const imageUrl = `http://localhost:${PORT}/uploads/${req.file.filename}`;
 
-            const newPost = await PostItem.create({
+            const newPost = new PostItem({
                 img: imageUrl,
                 title,
                 description,
@@ -172,11 +156,8 @@ app.post('/api/postItems', authenticateToken, (req, res) => {
                 imageType: imageType || 'cover'
             });
 
-            res.status(201).json({
-                ...newPost.toJSON(),
-                fileExists,
-                filePath
-            });
+            await newPost.save();
+            res.status(201).json(newPost);
         } catch (error) {
             console.error('Database error:', error);
             res.status(500).json({ message: 'Server Error', error: error.message });
@@ -187,9 +168,7 @@ app.post('/api/postItems', authenticateToken, (req, res) => {
 // DELETE a post by ID
 app.delete('/api/deleteItem/:id', authenticateToken, async (req, res) => {
     try {
-        const deleted = await PostItem.destroy({
-            where: { id: req.params.id }
-        });
+        const deleted = await PostItem.findByIdAndDelete(req.params.id);
         if (!deleted) {
             return res.status(404).json({ message: 'Post not found' });
         }
@@ -204,7 +183,6 @@ app.delete('/api/deleteItem/:id', authenticateToken, async (req, res) => {
 app.put('/api/updateItem/:id', authenticateToken, (req, res) => {
     upload(req, res, async function(err) {
         if (err) {
-            console.error('Upload error:', err);
             return res.status(400).json({ message: err.message });
         }
 
@@ -218,19 +196,19 @@ app.put('/api/updateItem/:id', authenticateToken, (req, res) => {
 
             if (req.file) {
                 const baseUrl = `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
-                updateData.img = `${baseUrl}/uploads/${req.file.filename}`;
+                updateData.img = `http://localhost:${PORT}/uploads/${req.file.filename}`;
             }
 
-            const [updated] = await PostItem.update(
+            const updatedPost = await PostItem.findByIdAndUpdate(
+                req.params.id,
                 updateData,
-                { where: { id: req.params.id } }
+                { new: true }
             );
 
-            if (!updated) {
+            if (!updatedPost) {
                 return res.status(404).json({ message: 'Post not found' });
             }
 
-            const updatedPost = await PostItem.findByPk(req.params.id);
             res.status(200).json(updatedPost);
         } catch (error) {
             console.error('Update error:', error);
@@ -283,20 +261,7 @@ app.get('/api/verify-token', authenticateToken, (req, res) => {
     }
 });
 
-// Keep Replit alive
-setInterval(() => {
-    https.get('https://your-repl-name.your-username.repl.co', (resp) => {
-        if (resp.statusCode === 200) {
-            console.log('Server kept alive');
-        }
-    }).on('error', (err) => {
-        console.log('Error: ' + err.message);
-    });
-}, 280000); // Every 4.6 minutes
-
 // Start the server
 app.listen(PORT, () => {
-    console.log('Server is running on:');
-    console.log(`1. Development URL: ${process.env.REPL_SLUG}`);
-    console.log(`2. Production URL: https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`);
+    console.log(`Server is running on http://localhost:${PORT}`);
 });

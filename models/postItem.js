@@ -1,33 +1,29 @@
 // models/postItem.js
-import { DataTypes } from 'sequelize';
-import { sequelize } from '../db.js';
+import mongoose from 'mongoose';
 
-const PostItem = sequelize.define('PostItem', {
+const postItemSchema = new mongoose.Schema({
     img: {
-        type: DataTypes.STRING,
-        allowNull: false
+        type: String,
+        required: true
     },
     title: {
-        type: DataTypes.STRING,
-        allowNull: false
+        type: String,
+        required: true
     },
     description: {
-        type: DataTypes.TEXT,
-        allowNull: false
+        type: String,
+        required: true
     },
     link: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    createdAt: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
+        type: String,
+        required: true
     },
     imageType: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        defaultValue: 'cover'
+        type: String,
+        default: 'cover'
     }
-});
+}, { timestamps: true });
+
+const PostItem = mongoose.model('PostItem', postItemSchema);
 
 export default PostItem;
