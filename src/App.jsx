@@ -4,9 +4,9 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Navbar2 from "./Components/Navbar2";
 import LoadingScreen from "./Components/LoadingScreen";
 import NewsPage from './Components/NewsPage';
-import Dashboard from './components/Dashboard';
-import Login from './components/Login';
-import ProtectedRoute from './components/ProtectedRoute';
+import Dashboard from './Components/Dashboard';
+import Login from './Components/Login';
+import ProtectedRoute from './Components/ProtectedRoute';
 
 // Lazy load all pages
 const Page1 = lazy(() => import("./Components/Page1"));
